@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.codeandmagic.android</groupId>
+	<artifactId>android-ci</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Android CI</name>
+	<description>Demo of using Maven for Android for continuous integration.</description>
+
+	<modules>
+		<module>android-ci-app</module>
+		<module>android-ci-test</module>
+	</modules>
+
+	<properties>
+		<android.version>2.1.2</android.version>
+		<android.api.level>7</android.api.level>
+		<android.support.version>v13</android.support.version>
+		<android.maven.plugin.version>3.0.0-alpha-13</android.maven.plugin.version>
+		<junit.version>4.8.2</junit.version>
+		<robotium.version>2.5</robotium.version>
+	</properties>
+
+	<!-- Your own repository where you can place dependencies that are not found 
+		in the central Maven Repo -->
+	<repositories>
+		<repository>
+			<id>Nexus</id>
+			<url>http://87.194.165.102:8081/nexus/content/repositories/releases</url>
+		</repository>
+	</repositories>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.google.android</groupId>
+				<artifactId>android</artifactId>
+				<version>${android.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.android</groupId>
+				<artifactId>android-test</artifactId>
+				<version>${android.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.android</groupId>
+				<artifactId>android-support</artifactId>
+				<version>${android.support.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+					<artifactId>android-maven-plugin</artifactId>
+					<version>${android.maven.plugin.version}</version>
+					<configuration>
+						<sdk>
+							<path>${env.ANDROID_HOME}</path>
+							<platform>${android.api.level}</platform>
+						</sdk>
+
+						<!-- For the testing phase, this plugin will need to run an emulator 
+							called 'Default', that needs to be available in $HOME/.android/avd/ folder 
+							as Default.avd -->
+						<emulator>
+							<avd>Default</avd>
+							<wait>60000</wait>
+						</emulator>
+
+						<zipalign>
+							<verbose>true</verbose>
+						</zipalign>
+
+						<!-- ProGuard is a free Java class file shrinker, optimizer, obfuscator, 
+							and preverifier. It detects and removes unused classes, fields, methods, 
+							and attributes. It optimizes bytecode and removes unused instructions. It 
+							renames the remaining classes, fields, and methods using short meaningless 
+							names.This plugin will read the Proguard configurations inside specified 
+							file. -->
+						<proguard>
+							<config>proguard.cfg</config>
+						</proguard>
+
+						<!-- Remove the existing .apk from the device/emulator before installing 
+							the newly built .apk file. -->
+						<undeployBeforeDeploy>true</undeployBeforeDeploy>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jarsigner-plugin</artifactId>
+					<version>1.2</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>2.4.3</version>
+					<configuration>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+
+				<plugin>
+					<groupId>com.pyx4me</groupId>
+					<artifactId>proguard-maven-plugin</artifactId>
+					<version>2.0.4</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>build-helper-maven-plugin</artifactId>
+					<version>1.5</version>
+				</plugin>
+				
+				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.
+				See http://wiki.eclipse.org/M2E_plugin_execution_not_covered -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											com.jayway.maven.plugins.android.generation2
+										</groupId>
+										<artifactId>
+											android-maven-plugin
+										</artifactId>
+										<versionRange>
+											[3.0.0-alpha-13,)
+										</versionRange>
+										<goals>
+											<goal>emulator-start</goal>
+											<goal>manifest-update</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore />
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+	
+	<!-- Declare the available profiles -->
+	 <profiles>
+	 	<!-- The standard profile (default) runs the instrumentation tests -->
+        <profile>
+            <id>standard</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>android-ci-app</module>
+                <module>android-ci-test</module>
+            </modules>
+        </profile>
+        
+        <!-- The release profile does sign, proguard, zipalign ... but does not run instrumentation tests -->
+        <profile>
+            <id>release</id>
+            <!-- via this activation the profile is automatically used when the release is done with the Maven Release
+            Plugin -->
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <modules>
+                <module>android-ci-app</module>
+            </modules>
+        </profile>
+    </profiles>
+
+</project>

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.codeandmagic.android</groupId>
+		<artifactId>android-ci</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>android-ci-app</artifactId>
+	<packaging>apk</packaging>
+	<name>Android CI App</name>
+	<description>Contains the user experience for this application.</description>
+
+	<dependencies>
+		<!-- Android -->
+		<dependency>
+			<groupId>com.google.android</groupId>
+			<artifactId>android</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Android Instrumentation Test -->
+		<dependency>
+			<groupId>com.google.android</groupId>
+			<artifactId>android-test</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Android Compatibility Library -->
+		<dependency>
+			<groupId>com.google.android</groupId>
+			<artifactId>android-support</artifactId>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<properties>
+		<environment>development</environment>
+	</properties>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<sourceDirectory>src</sourceDirectory>
+		<testSourceDirectory>test</testSourceDirectory>
+
+		<!-- A pair definition for resource filtering of xml files only (not binary 
+			files since they get mangled -->
+		<resources>
+			<resource>
+				<directory>${project.basedir}/res</directory>
+				<filtering>true</filtering>
+				<targetPath>${project.build.directory}/filtered-res</targetPath>
+				<includes>
+					<include>**/*.xml</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>${project.basedir}/res</directory>
+				<filtering>false</filtering>
+				<targetPath>${project.build.directory}/filtered-res</targetPath>
+				<excludes>
+					<exclude>**/*.xml</exclude>
+				</excludes>
+			</resource>
+		</resources>
+
+		<plugins>
+			<plugin>
+				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+				<artifactId>android-maven-plugin</artifactId>
+				<extensions>true</extensions>
+
+				<configuration>
+					<resourceDirectory>${project.build.directory}/filtered-res</resourceDirectory>
+					<manifest>
+						<debuggable>true</debuggable>
+					</manifest>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>startEmulator</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>emulator-start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>manifestUpdate</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>manifest-update</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>alignApk</id>
+						<phase>package</phase>
+						<goals>
+							<goal>zipalign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>resources</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<!-- Define what each profile declared in the parent actually does for this 
+		module -->
+	<profiles>
+		<profile>
+			<id>development</id>
+			<!-- Using this since activeByDefault does not work well with multiple 
+				profiles -->
+			<activation>
+				<property>
+					<name>environment</name>
+					<value>!production</value>
+				</property>
+			</activation>
+			<properties>
+				<deployment.stage>In Development</deployment.stage>
+			</properties>
+		</profile>
+
+		<profile>
+			<id>production</id>
+			<properties>
+				<deployment.stage>In Production</deployment.stage>
+			</properties>
+		</profile>
+
+		<profile>
+			<id>release</id>
+			<!-- Via this activation the profile is automatically used when the release 
+				is done with the Maven Release Plugin -->
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<!-- ProGuard can shrink the source classes, remove unused classes, 
+						obfuscate the code etc. -->
+					<plugin>
+						<groupId>com.pyx4me</groupId>
+						<artifactId>proguard-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>process-classes</phase>
+								<goals>
+									<goal>proguard</goal>
+								</goals>
+							</execution>
+						</executions>
+						<!-- We need to override the dependency of the plugin to get a newer 
+							version of ProGuard -->
+						<dependencies>
+							<dependency>
+								<groupId>net.sf.proguard</groupId>
+								<artifactId>proguard</artifactId>
+								<version>4.4</version>
+								<scope>runtime</scope>
+							</dependency>
+						</dependencies>
+						<configuration>
+							<proguardVersion>4.4</proguardVersion>
+							<maxMemory>256m</maxMemory>
+							<injar>android-classes</injar>
+							<libs>
+								<lib>${rt.jar.path}</lib>
+								<lib>${jsse.jar.path}</lib>
+							</libs>
+							<skip>false</skip>
+							<obfuscate>true</obfuscate>
+							<addMavenDescriptor>false</addMavenDescriptor>
+							<options>
+								<option>@proguard.cfg</option>
+							</options>
+							<exclusions>
+								<exclusion>
+									<groupId>com.google.android</groupId>
+									<artifactId>android-support</artifactId>
+								</exclusion>
+							</exclusions>
+						</configuration>
+					</plugin>
+
+					<!-- Sign the .apk using the keystore as specified in $HOME/.m2/settings.xml -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jarsigner-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>signing</id>
+								<goals>
+									<goal>sign</goal>
+									<goal>verify</goal>
+								</goals>
+								<phase>package</phase>
+								<inherited>true</inherited>
+								<configuration>
+									<removeExistingSignatures>true</removeExistingSignatures>
+									<archiveDirectory />
+									<includes>
+										<include>${project.build.directory}/${project.artifactId}.apk</include>
+									</includes>
+									<keystore>${sign.keystore}</keystore>
+									<alias>${sign.alias}</alias>
+									<storepass>${sign.storepass}</storepass>
+									<keypass>${sign.keypass}</keypass>
+									<verbose>true</verbose>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+
+					<!-- Zipalign the signed .apk also auto-incrementing the code version 
+						and setting android:debuggable flag to false -->
+					<plugin>
+						<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+						<artifactId>android-maven-plugin</artifactId>
+						<inherited>true</inherited>
+						<configuration>
+							<sign>
+								<debug>false</debug>
+							</sign>
+							<zipalign>
+								<verbose>true</verbose>
+								<inputApk>${project.build.directory}/${project.artifactId}.apk</inputApk>
+								<outputApk>${project.build.directory}/${project.artifactId}-signed-aligned.apk
+                                </outputApk>
+							</zipalign>
+							<manifest>
+								<debuggable>false</debuggable>
+								<versionCodeAutoIncrement>true</versionCodeAutoIncrement>
+							</manifest>
+						</configuration>
+						<executions>
+							<execution>
+								<id>manifestUpdate</id>
+								<phase>process-resources</phase>
+								<goals>
+									<goal>manifest-update</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>alignApk</id>
+								<phase>package</phase>
+								<goals>
+									<goal>zipalign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<configuration>
+							<artifacts>
+								<artifact>
+									<file>${project.build.directory}/${project.artifactId}-signed-aligned.apk</file>
+									<type>apk</type>
+									<classifier>signed-aligned</classifier>
+								</artifact>
+								<artifact>
+									<file>${project.build.directory}/proguard_map.txt</file>
+									<type>map</type>
+									<classifier>release</classifier>
+								</artifact>
+							</artifacts>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-signed-aligned</id>
+								<phase>package</phase>
+								<goals>
+									<goal>attach-artifact</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- To avoid having to do symlinks to rt.jar like documented here: http://bruehlicke.blogspot.com/2009/11/missing-rtjar-mac-os-x-using-proguard.html -->
+		<profile>
+			<id>linux</id>
+			<activation>
+				<os>
+					<family>unix</family>
+				</os>
+			</activation>
+			<properties>
+				<rt.jar.path>${env.JAVA_HOME}/jre/lib/rt.jar</rt.jar.path>
+				<jsse.jar.path>${env.JAVA_HOME}/jre/lib/jsse.jar</jsse.jar.path>
+			</properties>
+		</profile>
+
+		<!-- Mac profile has to be after unix since running on mac will trigger both -->
+		<profile>
+			<id>mac</id>
+			<activation>
+				<os>
+					<family>mac</family>
+				</os>
+			</activation>
+			<properties>
+				<!-- absolute path -->
+				<!--<rt.jar.path>/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Classes/classes.jar</rt.jar.path> -->
+				<!-- or with JAVA_HOME /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Home/ -->
+				<rt.jar.path>${env.JAVA_HOME}/../Classes/classes.jar</rt.jar.path>
+				<jsse.jar.path>${env.JAVA_HOME}/../Classes/jsse.jar</jsse.jar.path>
+			</properties>
+		</profile>
+
+		<profile>
+			<id>windows</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<properties>
+				<rt.jar.path>${env.JAVA_HOME}/jre/lib/rt.jar</rt.jar.path>
+				<jsse.jar.path>${env.JAVA_HOME}/jre/lib/jsse.jar</jsse.jar.path>
+			</properties>
+		</profile>
+	</profiles>
+</project>
