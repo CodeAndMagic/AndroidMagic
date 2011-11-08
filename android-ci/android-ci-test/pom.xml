@@ -30,25 +30,33 @@
 			<artifactId>android-test</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		
+
+		<!-- Android Compatibility Library -->
 		<dependency>
 			<groupId>com.google.android</groupId>
 			<artifactId>android-support</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 		</dependency>
-		
+
+		<!-- Robotium -->
+		<dependency>
+			<groupId>com.jayway.android.robotium</groupId>
+			<artifactId>robotium-solo</artifactId>
+			<version>${robotium.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.codeandmagic.android</groupId>
 			<artifactId>android-ci-app</artifactId>
 			<version>${project.version}</version>
 			<type>apk</type>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.codeandmagic.android</groupId>
 			<artifactId>android-ci-app</artifactId>
@@ -65,11 +73,11 @@
 				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
 				<artifactId>android-maven-plugin</artifactId>
 				<extensions>true</extensions>
-				 <configuration>
-                    <test>
-                        <skip>false</skip>
-                    </test>
-                </configuration>
+				<configuration>
+					<test>
+						<skip>false</skip>
+					</test>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
