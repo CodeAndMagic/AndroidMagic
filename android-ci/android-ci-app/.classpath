@@ -11,5 +11,6 @@
 	</classpathentry>
 	<classpathentry kind="src" output="bin/classes" path="src"/>
 	<classpathentry kind="src" output="bin/classes" path="res"/>
+	<classpathentry kind="src" output="bin/classes" path="test"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

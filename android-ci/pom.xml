@@ -22,8 +22,10 @@
 		<android.api.level>7</android.api.level>
 		<android.support.version>v13</android.support.version>
 		<android.maven.plugin.version>3.0.0-alpha-13</android.maven.plugin.version>
+		<google.maps.version>14</google.maps.version>
 		<junit.version>4.8.2</junit.version>
 		<robotium.version>2.5</robotium.version>
+		<robolectric.version>1.0</robolectric.version>
 	</properties>
 
 	<!-- Your own repository where you can place dependencies that are not found 

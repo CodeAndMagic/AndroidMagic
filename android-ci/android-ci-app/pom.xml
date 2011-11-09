@@ -37,10 +37,26 @@
 			<artifactId>android-support</artifactId>
 			<scope>compile</scope>
 		</dependency>
+		
+		<!-- Google Maps -->
+		<dependency>
+			<groupId>com.google.android</groupId>
+			<artifactId>maps</artifactId>
+			<version>${google.maps.version}</version>
+			<scope>provided</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- Robolectric --> 
+		<dependency>
+			<groupId>com.pivotallabs</groupId>
+			<artifactId>robolectric</artifactId>
+			<version>${robolectric.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
