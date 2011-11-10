@@ -33,7 +33,7 @@
 	<repositories>
 		<repository>
 			<id>Nexus</id>
-			<url>http://87.194.165.102:8081/nexus/content/repositories/releases</url>
+			<url>http://127.0.0.1:8081/nexus/content/repositories/releases</url>
 		</repository>
 	</repositories>
 
@@ -70,6 +70,7 @@
 					<artifactId>android-maven-plugin</artifactId>
 					<version>${android.maven.plugin.version}</version>
 					<configuration>
+						<!-- Give the path to your Android SDK and the Android version you're using -->
 						<sdk>
 							<path>${env.ANDROID_HOME}</path>
 							<platform>${android.api.level}</platform>
